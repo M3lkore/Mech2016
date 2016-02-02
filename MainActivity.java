@@ -55,7 +55,7 @@ public class MainActivity extends Activity implements OnGestureListener, ScaleGe
     float LastKnownVelocityX;
     float LastKnownVelocityY;
 
-    //Find direction
+    //Subroutine - Find direction
     public void FindDirection()
     {
         //Negatives = upwards/left, Positives = Downward/right
