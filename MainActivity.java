@@ -42,7 +42,7 @@ textview.setText() -> Message at top of the screen
 
 //right-click the MainActivity and generate, implement, and it will generate the overrides
 //Must have all the overrides it requires else it won't work
-public class MainActivity extends Activity implements OnGestureListener, ScaleGestureDetector.OnScaleGestureListener{
+public class MainActivity extends Activity implements OnGestureListener{
 
     //Class Reference -> we need to have a name reference to a class
     TextView textview;
@@ -82,9 +82,7 @@ public class MainActivity extends Activity implements OnGestureListener, ScaleGe
         }
     }
 
-
-
-
+    
     //Sets start-up values and metrics upon opening app
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -239,31 +237,16 @@ public class MainActivity extends Activity implements OnGestureListener, ScaleGe
         return true;
     }
 
-
-    @Override
-    public boolean onScale(ScaleGestureDetector detector) {
-        return false;
-    }
-
-    @Override
-    public boolean onScaleBegin(ScaleGestureDetector detector) {
-        return false;
-    }
-
-    @Override
-    public void onScaleEnd(ScaleGestureDetector detector) {
-
-    }
-
-
-
-
-    //NOT USED
     @Override
     public boolean onDown(MotionEvent e) {
         return false;
     }
 
+
+
+
+
+    //NOT USED
     @Override
     public void onShowPress(MotionEvent e) {
     }
