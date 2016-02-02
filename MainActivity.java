@@ -8,6 +8,7 @@ import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.GestureDetector.OnGestureListener;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -15,6 +16,10 @@ import android.widget.Toast;
 
 
 /*NOTES:
+ctrl+shift+R-> replace all
+ctrl+/ -> comment lines with //
+ctrl+shift+/ -> comments lines with sectional comments  / * ... * /
+
 \n      -> new line
 ||      -> logical OR
 &&      -> logical AND
@@ -25,6 +30,11 @@ Left screen -> coordinates X =0
 
 Toasts  -> displays a msg at the bottom of screen, short/long is for the amount of time it appears for
 
+Textview = class, textview = references the class
+GesturDetector = class, detector = references the class
+instantiating = you have minecraft on your computer but you haven't opened it yet to interact with it yet
+object is the program, the only way for me to interact with the program is to open an instance of it
+
 
 textview.setText() -> Message at top of the screen
 */
@@ -32,18 +42,47 @@ textview.setText() -> Message at top of the screen
 
 //right-click the MainActivity and generate, implement, and it will generate the overrides
 //Must have all the overrides it requires else it won't work
-public class MainActivity extends Activity implements OnGestureListener{
+public class MainActivity extends Activity implements OnGestureListener, ScaleGestureDetector.OnScaleGestureListener{
 
-    //Textview = class, textview = references the class
-    //GesturDetector = class, detector = references the class
-    //instantiating = you have minecraft on your computer but you haven't opened it yet to interact with it yet
-    //object is the program, the only way for me to interact with the program is to open an instance of it
+    //Class Reference -> we need to have a name reference to a class
     TextView textview;
     GestureDetector detector;
 
-    //create booleans for start up
+    //create Global variables - those that are used in several overrides
     boolean isDriving = false;
     boolean isForward = false;
+
+    float LastKnownVelocityX;
+    float LastKnownVelocityY;
+
+    //Find direction
+    public void FindDirection()
+    {
+        //Negatives = upwards/left, Positives = Downward/right
+        //Sets up wordage //Negatives = upwards/left, Positives = Downward/right
+        if (LastKnownVelocityY > 0 && LastKnownVelocityX > 0)
+        {
+            textview.setText("\nStatus: Reverse and Right");
+        }
+        else if (LastKnownVelocityY > 0 && LastKnownVelocityX < 0)
+        {
+            textview.setText("\nStatus: Reverse and Left");
+        }
+        else if (LastKnownVelocityY < 0 && LastKnownVelocityX > 0)
+        {
+            textview.setText("\nStatus: Forward and Right");
+        }
+        else if (LastKnownVelocityY < 0 && LastKnownVelocityX < 0)
+        {
+            textview.setText("\nStatus: Forward and Left");
+        }
+        else
+        {
+            textview.setText("\nStatus: Driving unknown direction!!!!");
+        }
+    }
+
+
 
 
     //Sets start-up values and metrics upon opening app
@@ -75,22 +114,31 @@ public class MainActivity extends Activity implements OnGestureListener{
     }
 
 
+
     //Message at top of the screen = textview.setText()
     //Message at the bottom of the screen = Toast.makeText().show()
     @Override
     public boolean onSingleTapUp(MotionEvent event) {
         //toggles our state
-        isDriving = !isDriving;
-
-        if (isDriving)
+        if (LastKnownVelocityX > 0 || LastKnownVelocityY > 0)
         {
-            textview.setText("\nStatus: Driving");
-            Toast.makeText(getApplicationContext(), "Start driving forwards", Toast.LENGTH_SHORT).show();
+            isDriving = !isDriving;
         }
+
+        //Subroutine: Changes text at top of screen with proper direction
+        FindDirection();
+
+        //When car is moving
+        if (isDriving && (LastKnownVelocityX > 0 || LastKnownVelocityY > 0))
+        {
+            //textview.setText("\nStatus: Driving in last known direction");
+            Toast.makeText(getApplicationContext(), "Start driving forwards\n\nLast known velocity X= " + LastKnownVelocityX + "\n" +
+                    "Last known velocity Y= "+ LastKnownVelocityY, Toast.LENGTH_SHORT).show();
+        }
+        //when car is idle
         else if (!isDriving)
         {
             textview.setText("\nStatus: Idle");
-            Toast.makeText(getApplicationContext(), "Stop driving forwards", Toast.LENGTH_SHORT).show();
         }
 
         //create float variables and set them to get the x/y coordinates
@@ -144,37 +192,69 @@ public class MainActivity extends Activity implements OnGestureListener{
 
     //how sensitive you want it to react
     @Override
-    public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+    public boolean onFling(MotionEvent e1, MotionEvent e2, float CurrentVelocityX, float CurrentVelocityY) {
 
         //sets sensitivity (note: the F sets it to a float)
         boolean swipedLeft, swipedRight, swipedUp, swipedDown, hasSwiped;
-        swipedLeft = (velocityX < -2000F);
-        swipedRight = (velocityX > 2000F);
-        swipedUp = (velocityY < -800F);
-        swipedDown = (velocityY > 800F);
 
+        //Negatives = upwards/left, Positives = Downward/right
+        //Sets threshold for velocity swipe must be at to be registered
+        swipedLeft = (CurrentVelocityX < -1500F);
+        swipedRight = (CurrentVelocityX > 1500F);
+        swipedUp = (CurrentVelocityY < -1500F);
+        swipedDown = (CurrentVelocityY > 1500F);
+
+        //define variable to acknowledge that any swipe has occurred
         hasSwiped = swipedLeft || swipedRight || swipedUp || swipedDown;
 
         //define new string variable
         String addText ="";
 
         // += is the add itself operator, will display "Swiped Left Swiped Up)
-        if (swipedLeft)
-            addText += "Swiped Left ";
-        if (swipedRight)
-            addText += "Swiped Right ";
         if (swipedUp)
             addText += "Swiped Up ";
         if (swipedDown)
             addText += "Swiped Down ";
+        if (swipedLeft)
+            addText += "Swiped Left ";
+        if (swipedRight)
+            addText += "Swiped Right ";
         if (hasSwiped)
             Toast.makeText(getApplicationContext(), addText, Toast.LENGTH_SHORT).show();
 
+
+
         //see the values
-        Toast.makeText(getApplicationContext(), "Swipe Velocity x =" + velocityX + "\nSwipe  Velocity y =" + velocityY, Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), "Swipe Velocity x =" + CurrentVelocityX + "\nSwipe  Velocity y =" + CurrentVelocityY, Toast.LENGTH_SHORT).show();
+
+        //store the swipe velocity for future use
+        LastKnownVelocityX = CurrentVelocityX;
+        LastKnownVelocityY = CurrentVelocityY;
+
+        //Subroutine: Changes text at top of screen with proper direction
+        FindDirection();
+
+
 
         return true;
     }
+
+
+    @Override
+    public boolean onScale(ScaleGestureDetector detector) {
+        return false;
+    }
+
+    @Override
+    public boolean onScaleBegin(ScaleGestureDetector detector) {
+        return false;
+    }
+
+    @Override
+    public void onScaleEnd(ScaleGestureDetector detector) {
+
+    }
+
 
 
 
@@ -192,4 +272,6 @@ public class MainActivity extends Activity implements OnGestureListener{
     public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
         return false;
     }
+
+
 }
