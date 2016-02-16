@@ -4,44 +4,23 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.GestureDetector.OnGestureListener;
 import android.view.MotionEvent;
-import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
-/*NOTES:
-ctrl+shift+R-> replace all
-ctrl+/ -> comment lines with //
-ctrl+shift+/ -> comments lines with sectional comments  / * ... * /
-
-\n      -> new line
-||      -> logical OR
-&&      -> logical AND
-==      -> match, comparison of the values
-Top screen  -> coordinates Y =0
-Left screen -> coordinates X =0
+import java.util.Calendar;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 
-Toasts  -> displays a msg at the bottom of screen, short/long is for the amount of time it appears for
-
-Textview = class, textview = references the class
-GesturDetector = class, detector = references the class
-instantiating = you have minecraft on your computer but you haven't opened it yet to interact with it yet
-object is the program, the only way for me to interact with the program is to open an instance of it
-
-
-textview.setText() -> Message at top of the screen
-*/
-
-
-//right-click the MainActivity and generate, implement, and it will generate the overrides
-//Must have all the overrides it requires else it won't work
 public class MainActivity extends Activity implements OnGestureListener{
 
     //Class Reference -> we need to have a name reference to a class
@@ -52,37 +31,49 @@ public class MainActivity extends Activity implements OnGestureListener{
     boolean isDriving = false;
     boolean isForward = false;
 
+    //create Global variables - used to know velocity
     float LastKnownVelocityX;
     float LastKnownVelocityY;
 
-    //Subroutine - Find direction
-    public void FindDirection()
-    {
-        //Negatives = upwards/left, Positives = Downward/right
-        //Sets up wordage //Negatives = upwards/left, Positives = Downward/right
-        if (LastKnownVelocityY > 0 && LastKnownVelocityX > 0)
-        {
-            textview.setText("\nStatus: Reverse and Right");
-        }
-        else if (LastKnownVelocityY > 0 && LastKnownVelocityX < 0)
-        {
-            textview.setText("\nStatus: Reverse and Left");
-        }
-        else if (LastKnownVelocityY < 0 && LastKnownVelocityX > 0)
-        {
-            textview.setText("\nStatus: Forward and Right");
-        }
-        else if (LastKnownVelocityY < 0 && LastKnownVelocityX < 0)
-        {
-            textview.setText("\nStatus: Forward and Left");
-        }
-        else
-        {
-            textview.setText("\nStatus: Driving unknown direction!!!!");
-        }
+    float FB;
+    float RL;
+
+    //create Global variables - used to know coordinate positions
+    int StartingX;
+    int StartingY;
+    int MovingX;
+    int MovingY;
+    int EndingX;
+    int EndingY;
+
+    int valueRL = 0;
+    int valueFB = 0;
+
+    //create Global variables - used to display text direction
+    String LastKnownRL;
+    String LastKnownFB;
+
+
+
+//***************************
+//     SUB-ROUTINES:
+//***************************
+    public void GetSpeed(){
+
     }
 
-    
+
+
+
+
+
+
+
+
+//***************************
+//    OVER RIDES:
+//***************************
+
     //Sets start-up values and metrics upon opening app
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,141 +103,188 @@ public class MainActivity extends Activity implements OnGestureListener{
     }
 
 
-
-    //Message at top of the screen = textview.setText()
-    //Message at the bottom of the screen = Toast.makeText().show()
+    //SINGLE TAP - if moving then stop and if tap again continue, if not driving then nothing
     @Override
     public boolean onSingleTapUp(MotionEvent event) {
-        //toggles our state
-        if (LastKnownVelocityX > 0 || LastKnownVelocityY > 0)
-        {
-            isDriving = !isDriving;
-        }
-
-        //Subroutine: Changes text at top of screen with proper direction
-        FindDirection();
-
-        //When car is moving
-        if (isDriving && (LastKnownVelocityX > 0 || LastKnownVelocityY > 0))
-        {
-            //textview.setText("\nStatus: Driving in last known direction");
-            Toast.makeText(getApplicationContext(), "Start driving forwards\n\nLast known velocity X= " + LastKnownVelocityX + "\n" +
-                    "Last known velocity Y= "+ LastKnownVelocityY, Toast.LENGTH_SHORT).show();
-        }
-        //when car is idle
-        else if (!isDriving)
-        {
-            textview.setText("\nStatus: Idle");
-        }
-
-        //create float variables and set them to get the x/y coordinates
-        float touchX = event.getX();
-        float touchY = event.getY();
-
-        //prints current touch coordinates
-        Toast.makeText(getApplicationContext(), "Touch x: " + touchX + "\nTouch y: " + touchY, Toast.LENGTH_SHORT).show();
-
-        return true;
+        return false;
     }
 
-
+    //ON TOUCH - get coordinates, recognize direction, output a speed/direction on distance of swipe
     @Override
     public boolean onTouchEvent(MotionEvent event)  {
 
-        //controls the reverse and switching to driving forwards
-        if (!isForward && event.getAction() == android.view.MotionEvent.ACTION_UP)
+        //finding and displaying coordinates of Touch Down, Moving, Touch Up positions
+        switch (event.getAction())
         {
-            //if not forward, then make it forward when we touch screen
-            isForward = true;
+            case MotionEvent.ACTION_DOWN:
+                StartingX = (int)event.getX();
+                StartingY = (int)event.getY();
+                break;
 
-            if (isDriving)
-            {
-                textview.setText("Status: Driving forwards");
-                Toast.makeText(getApplicationContext(), "Stop driving backwards, starting driving forwards", Toast.LENGTH_SHORT).show();
-            }
+            case MotionEvent.ACTION_MOVE:
+                MovingX = (int)event.getX();
+                MovingY = (int)event.getY();
+                EndingX = -1;
+                EndingY = -1;
+
+                int Value1 = 75; //interval
+                int Value2 = 2 * Value1; //150
+                int Value3 = 3 * Value1; //225
+                int Value4 = 4 * Value1; //300
+                int Value5 = 5 * Value1; //375
+
+                //Shows Forward/Backwards (+ = forward, - = reverse)
+                FB = StartingY - MovingY;
+
+                if (FB > Value1 && FB <= Value2){
+                    LastKnownFB = "Slowest Forward";
+                    valueFB = 1;
+                    //Log.d(DirectionFB, LastKnownFB + " (" + valueFB + ")");
+                }
+                if (FB > Value2 && FB <= Value3){
+                    LastKnownFB = "Slow Forward";
+                    valueFB = 2;
+                }
+                if (FB > Value3 && FB <= Value4){
+                    LastKnownFB = "Medium Forward";
+                    valueFB = 3;
+                }
+                if (FB > Value4 && FB <= Value5){
+                    LastKnownFB = "Fast Forward";
+                    valueFB = 4;
+                }
+                if (FB > Value5){
+                    LastKnownFB = "Fastest Forward";
+                    valueFB = 5;
+                }
+                if (FB < -Value1 && FB >= -Value2){
+                    LastKnownFB = "Slowest Reverse";
+                    valueFB = -1;
+                }
+                if (FB < -Value2 && FB >= -Value3){
+                    LastKnownFB = "Slow Reverse";
+                    valueFB = -2;
+                }
+                if (FB < -Value3 && FB >= -Value4){
+                    LastKnownFB = "Medium Reverse";
+                    valueFB = -3;
+                }
+                if (FB < -Value4 && FB >= -Value5){
+                    LastKnownFB = "Fast Reverse";
+                    valueFB = -4;
+                }
+                if (FB < -Value5){
+                    LastKnownFB = "Fastest Reverse";
+                    valueFB = -5;
+                }
+                if (FB >= -Value1 && FB <= Value1){
+                    LastKnownFB = "No Forward/Reverse";
+                    valueFB = 0;
+                }
+
+
+
+                //Controls Right/Left (+ = right, - = left)
+                RL = MovingX - StartingX;
+                if (RL > Value1 && RL <= Value2){
+                    LastKnownRL = "Slowest Right";
+                    valueRL = 1;
+                    //Log.d(DirectionRL, LastKnownRL + " (" + valueRL + ")");
+                }
+                if (RL > Value2 && RL <= Value3){
+                    LastKnownRL = "Slow Right";
+                    valueRL = 2;
+                }
+                if (RL > Value3 && RL <= Value4){
+                    LastKnownRL = "Medium Right";
+                    valueRL = 3;
+                }
+                if (RL > Value4 && RL <= Value5){
+                    LastKnownRL = "Fast Right";
+                    valueRL = 4;
+                }
+                if (RL > Value5){
+                    LastKnownRL = "Fastest Right";
+                    valueRL = 5;
+                }
+                if (RL < -Value1 && RL >= -Value2){
+                    LastKnownRL = "Slowest Left";
+                    valueRL = -1;
+                }
+                if (RL < -Value2 && RL >= -Value3){
+                    LastKnownRL = "Slow Left";
+                    valueRL = -2;
+                }
+                if (RL < -Value3 && RL >= -Value4){
+                    LastKnownRL = "Medium Left";
+                    valueRL = -3;
+                }
+                if (RL < -Value4 && RL >= -Value5){
+                    LastKnownRL = "Fast Left";
+                    valueRL = -4;
+                }
+                if (RL < -Value5){
+                    LastKnownRL = "Fastest Left";
+                    valueRL = -5;
+                }
+                if (RL >= -Value1 && RL <=Value1){
+                    LastKnownRL = "No Right/Left";
+                    valueRL = 0;
+                }
+
+                //display text in Logcat
+                String DirectionFB = " Direction in FB";
+                String DirectionRL = " Direction in RL";
+
+                Log.d(DirectionFB, " ("+FB+")");
+                Log.d(DirectionFB, LastKnownFB + " (" + valueFB + ")");
+                Log.d(DirectionRL, LastKnownRL + " (" + valueRL + ")");
+
+
+                textview.setText("\nStatus:\n" + LastKnownFB + "\n" + LastKnownRL);
+
+                break;
+
+            case MotionEvent.ACTION_UP:
+                EndingX = (int)event.getX();
+                EndingY = (int)event.getY();
+
+                //coordinates seen in debug Logcat view ".../Coordinates: Down = #,# \nMove = #,# ....
+                String Coordinates = "Coordinates";
+                String TouchDown = "DOWN = " + StartingX + "," + StartingY;
+                String TouchMove = "MOVE = " + MovingX + "," + MovingY;
+                String TouchUp = "UP = " + EndingX + "," + EndingY;
+
+                Log.d(Coordinates, TouchDown);
+                Log.d(Coordinates, TouchMove);
+                Log.d(Coordinates, TouchUp);
+                break;
         }
 
 
-        //returns -> stops the override, the brackets are part of the structure to separate areas
+
+
         return detector.onTouchEvent(event);
     }
 
 
+
+
     @Override
     public void onLongPress(MotionEvent e) {
-        isForward = false;
-
-        if (isDriving)
-        {
-            textview.setText("RC Robot\nStatus: Driving backwards");
-            Toast.makeText(getApplicationContext(), "Start driving backwards", Toast.LENGTH_SHORT).show();
-        }
-        else
-        {
-            Toast.makeText(getApplicationContext(), "Not currently driving", Toast.LENGTH_SHORT).show();
-        }
     }
 
 
-    //how sensitive you want it to react
     @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float CurrentVelocityX, float CurrentVelocityY) {
-
-        //sets sensitivity (note: the F sets it to a float)
-        boolean swipedLeft, swipedRight, swipedUp, swipedDown, hasSwiped;
-
-        //Negatives = upwards/left, Positives = Downward/right
-        //Sets threshold for velocity swipe must be at to be registered
-        swipedLeft = (CurrentVelocityX < -1500F);
-        swipedRight = (CurrentVelocityX > 1500F);
-        swipedUp = (CurrentVelocityY < -1500F);
-        swipedDown = (CurrentVelocityY > 1500F);
-
-        //define variable to acknowledge that any swipe has occurred
-        hasSwiped = swipedLeft || swipedRight || swipedUp || swipedDown;
-
-        //define new string variable
-        String addText ="";
-
-        // += is the add itself operator, will display "Swiped Left Swiped Up)
-        if (swipedUp)
-            addText += "Swiped Up ";
-        if (swipedDown)
-            addText += "Swiped Down ";
-        if (swipedLeft)
-            addText += "Swiped Left ";
-        if (swipedRight)
-            addText += "Swiped Right ";
-        if (hasSwiped)
-            Toast.makeText(getApplicationContext(), addText, Toast.LENGTH_SHORT).show();
-
-
-
-        //see the values
-        Toast.makeText(getApplicationContext(), "Swipe Velocity x =" + CurrentVelocityX + "\nSwipe  Velocity y =" + CurrentVelocityY, Toast.LENGTH_SHORT).show();
-
-        //store the swipe velocity for future use
-        LastKnownVelocityX = CurrentVelocityX;
-        LastKnownVelocityY = CurrentVelocityY;
-
-        //Subroutine: Changes text at top of screen with proper direction
-        FindDirection();
-
-
-
-        return true;
-    }
-
-    @Override
-    public boolean onDown(MotionEvent e) {
         return false;
     }
 
+    @Override
+    public boolean onDown(MotionEvent event) {
+        return false;
+    }
 
-
-
-
-    //NOT USED
     @Override
     public void onShowPress(MotionEvent e) {
     }
@@ -255,6 +293,5 @@ public class MainActivity extends Activity implements OnGestureListener{
     public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
         return false;
     }
-
-
 }
+
